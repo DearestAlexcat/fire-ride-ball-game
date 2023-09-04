@@ -10,5 +10,6 @@
 * some screens
 * dynamic map generation
 * some pretty good particles
+* camera shake
 
 ![](fireride.gif)
