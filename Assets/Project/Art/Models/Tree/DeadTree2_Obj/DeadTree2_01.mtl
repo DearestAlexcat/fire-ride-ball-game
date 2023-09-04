@@ -1,0 +1,11 @@
+# Created with Anim8or 1.00
+# Object "DeadTree2_01":
+
+newmtl TreeDead_Bark
+Ka 0.165 0.165 0.165
+Kd 0.698 0.698 0.698
+Ks 0.224 0.224 0.224
+Ns 1.0
+map_Kd DeadTreeBark_Diffuse.jpg
+map_Ks DeadTreeBark_Specular.jpg
+
