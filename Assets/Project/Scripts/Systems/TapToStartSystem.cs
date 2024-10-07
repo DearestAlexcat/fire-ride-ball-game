@@ -11,23 +11,21 @@ namespace Client
  
         public void Run(IEcsSystems systems) 
         {
-            // MainScreen.cs sets the state to NONE
-            if (_runtimeData.Value.GameState == GameState.NONE || _runtimeData.Value.GameState == GameState.TAPTOSTART)
+            // exit GameState.TAPTOSTART state
+            if (_runtimeData.Value.GameState == GameState.TAPTOSTART && Input.GetMouseButtonUp(0))
             {
-                if (Input.GetMouseButtonDown(0) && _runtimeData.Value.GameState == GameState.TAPTOSTART)
+                if (EventSystem.current.IsPointerOverGameObject() || EventSystem.current.IsPointerOverGameObject(0))
                 {
-                    if (EventSystem.current.IsPointerOverGameObject() || EventSystem.current.IsPointerOverGameObject(0))
-                    {
-                        return;
-                    }
-
-                    systems.GetWorld().NewEntityRef<ChangeStateEvent>().NewGameState = GameState.PLAYING;
+                    return;
                 }
 
-                if (Input.GetMouseButtonDown(0) && _runtimeData.Value.GameState == GameState.NONE)
-                {
-                    systems.GetWorld().NewEntityRef<ChangeStateEvent>().NewGameState = GameState.TAPTOSTART;
-                }
+                systems.GetWorld().NewEntityRef<ChangeStateEvent>().NewGameState = GameState.PLAYING;
+            }
+
+            // enter GameState.TAPTOSTART state
+            else if (_runtimeData.Value.GameState == GameState.MAIN && Input.GetMouseButtonUp(0))   // MainScreen.cs sets GameState.MAIN state
+            {
+                systems.GetWorld().NewEntityRef<ChangeStateEvent>().NewGameState = GameState.TAPTOSTART;
             }
         }
     }

@@ -13,18 +13,11 @@ namespace Client
 
         private readonly EcsCustomInject<SceneContext> _sceneContext = default;
         private readonly EcsCustomInject<StaticData> _staticData = default;
-        private readonly EcsCustomInject<UI> _ui = default;
-
-        private readonly EcsFilterInject<Inc<PlayerInputComponent>> _inputFilter = default;
-        private readonly EcsFilterInject<Inc<CurrentPivots>> _segmentPivots = default;
-        private readonly EcsFilterInject<Inc<AccrualScoreComponent>> _scoreFilter = default;
-        private readonly EcsFilterInject<Inc<CurvePathComponent>> _curveFilter = default;
 
         public void Init(IEcsSystems systems)
         {
-            EcsWorld world = systems.GetWorld();
-            _filterEnter = world.Filter<OnTriggerEnterEvent>().End();
-            _poolEnter = world.GetPool<OnTriggerEnterEvent>();
+            _filterEnter = systems.GetWorld().Filter<OnTriggerEnterEvent>().End();
+            _poolEnter = systems.GetWorld().GetPool<OnTriggerEnterEvent>();
         }
 
         public void Run(IEcsSystems systems) 
@@ -34,31 +27,38 @@ namespace Client
                 ref var eventData = ref _poolEnter.Get(entity);
                 var other = eventData.collider;
 
-                if (other == null)
-                {
-                    continue;
-                }
+                if (other == null) continue;
 
                 EcsWorld world = systems.GetWorld();
 
                 if (other.CompareTag("ChunkObstacle"))
                 {
-                  //  Debug.Log("ChunkObstacle");
+                    if (eventData.senderGameObject == null) return;
 
-                    _sceneContext.Value.PlayerView.gameObject.SetActive(false);
-                    
-                    world.NewEntity<CameraShakeReguest>();                    
-                    world.NewEntityRef<ChangeStateEvent>().NewGameState = GameState.LOSE;
+                    if (eventData.senderGameObject.CompareTag("Player"))
+                    {
+                        _sceneContext.Value.PlayerView.gameObject.SetActive(false);
+
+                        world.NewEntityRef<CameraShakeReguest>();
+                        world.NewEntityRef<ChangeStateEvent>().NewGameState = GameState.LOSE;
+                    }
+                    else if(eventData.senderGameObject.CompareTag("FallingRocket"))
+                    {
+                        systems.GetWorld().NewEntityRef<FXRequest>().position = eventData.senderGameObject.transform.position;
+                        Object.Destroy(eventData.senderGameObject);
+                    }
                 }
 
                 else if (other.CompareTag("Rocket"))
                 {
-                    //Debug.Log("Rocket");
+                    if (!eventData.senderGameObject.TryGetComponent(out Player player)) return;
 
-                    // Destroy object rocket
+                    player.SetActiveOrb(false);
+                    player.ClearRope();
+
                     var rocketObj = other.gameObject.GetComponent<Rocket>();
-                    rocketObj.gameObject.SetActive(false);
-                    world.GetPool<Component<Rocket>>().Del(rocketObj.Entity);
+                    rocketObj.PlayPickupFx();
+                    rocketObj.Disappearance();
 
                     // Logic with rocket flight work
                     float flightTime = Random.Range(_staticData.Value.flightTimeRangeRocket.x, _staticData.Value.flightTimeRangeRocket.y);
@@ -66,7 +66,7 @@ namespace Client
                     if (_sceneContext.Value.PlayerView.IsRocketActive)
                     {
                         world.GetPool<RocketMoveComponent>().Get(_sceneContext.Value.PlayerView.RocketEntity).Time += flightTime;
-                        CreatePopUpText(world, _staticData.Value.PlusTime, "+" + flightTime + " sec", _staticData.Value.OnePlusShift, _ui.Value.GameScreen.transform);
+                        world.CreatePopUpText($"+{flightTime} sec", MesssageType.PLUSTIME);
                     }
                     else
                     {
@@ -74,103 +74,61 @@ namespace Client
                         
                         ref var rocket = ref world.GetPool<RocketMoveComponent>().Get(_sceneContext.Value.PlayerView.RocketEntity);
                         rocket.Time = flightTime;
-                        rocket.Pivot = other.gameObject.GetComponent<Rocket>().Pivot + _staticData.Value.skipWaypointsInFlightRocket;
-
+                        rocket.Pointer = other.gameObject.GetComponent<Rocket>().Pointer + _staticData.Value.skipWaypointsInFlightRocket;
+                      
+                        _sceneContext.Value.PlayerView.SetActiveWarpEffect(true);
                         _sceneContext.Value.PlayerView.SetActiveRocket(true);
-                        CreatePopUpText(world, _staticData.Value.PlusTime, flightTime + " sec", _staticData.Value.OnePlusShift, _ui.Value.GameScreen.transform);
 
-                        SetAccurelScoreX2();
-                        RemovePlayerInput();
-                        AddPointsToPathCurve(world, rocketObj.SegmentEntity);
+                        world.CreatePopUpText($"{flightTime} sec", MesssageType.PLUSTIME);
+
+                        systems.GetWorld().SetIncreaseScoreX(2);
                     }
                 }
 
-                else if (other.CompareTag("GotoNextSegment"))
+                else if (other.CompareTag("Interacting"))
                 {
-                    //Debug.Log("GotoNextSegment");
-
-                    SetFogMaterial();
-                    _sceneContext.Value.NextSegment.PlayFX();
-                }
-
-                else if (other.CompareTag("BonusCircleObj"))
-                {
-                    //Debug.Log("BonusCircleObj");
-
                     var gate = eventData.senderGameObject.transform.parent.GetComponentInParent<BonusCircle>();
 
                     if (eventData.senderGameObject.CompareTag("BonusCircleX2"))
                     {
                         gate.DestructionGate("BonusCircleX2");
                         gate.PlayFX();
-                        _ui.Value.GameScreen.IncrementScore(2);
-                        CreatePopUpText(world, _staticData.Value.PlusOne, "+2", _staticData.Value.OnePlusShift, _ui.Value.GameScreen.transform);
+                        Service<UI>.Get().GameScreen.IncrementScore(2);
+
+                        world.CreatePopUpText("+2", MesssageType.PLUSONE);
                     }
-                    else // if (gate.gameObject.CompareTag("Gate2"))
+                    else
                     {
                         gate.DestructionGate("BonusCircleX1");
-                        _ui.Value.GameScreen.IncrementScore(1);
-                        CreatePopUpText(world, _staticData.Value.PlusOne, "+1", _staticData.Value.OnePlusShift, _ui.Value.GameScreen.transform);
+                        Service<UI>.Get().GameScreen.IncrementScore(1);
+
+                        world.CreatePopUpText("+1", MesssageType.PLUSONE);
                     }
+                }
+
+                else if (other.CompareTag("MoveNextSegment"))
+                {
+                    if (!eventData.senderGameObject.CompareTag("Player")) return;
+
+                    SetFogMaterial(other.GetComponent<GateNextSegment>().segmentMatIndex);
+                    _sceneContext.Value.GateNextSegment.PlayFX();
                 }
 
                 else if (other.CompareTag("SpawnNextSegment"))
                 {
-                    //Debug.Log("SpawnNextSegment");
+                    if (!eventData.senderGameObject.CompareTag("Player")) return;
 
                     _sceneContext.Value.SpawnNextSegment.gameObject.SetActive(false);
-                    world.NewEntityRef<SpawnSegmentRequest>().NumberChunks = _staticData.Value.numberChunksInSegment;
+                    world.NewEntity<SpawnSegmentRequest>();
                 }
             }
         }
 
-        private void RemovePlayerInput()
+        private void SetFogMaterial(int index)
         {
-            foreach (var item in _inputFilter.Value)
-            {
-                _inputFilter.Pools.Inc1.Del(item);
-            }
-        }
-
-        private void AddPointsToPathCurve(EcsWorld world, int segmentEntity)
-        {
-            foreach (var entity in _curveFilter.Value)
-            {
-                _curveFilter.Pools.Inc1.Get(entity).CurvePath.AddRange(world.GetPool<SegmentPathComponent>().Get(segmentEntity).SegmentPath);
-            }
-        }
-
-        private void SetAccurelScoreX2()
-        {
-            foreach (var item in _scoreFilter.Value)
-            {
-                _scoreFilter.Pools.Inc1.Get(item).AccrualIntervalScore = _staticData.Value.accrualIntervalScore * 0.5f;
-            }
-
-            _ui.Value.GameScreen.SetScoreXN(2);
-            _ui.Value.GameScreenWorld.SetScoreXN(2);
-        }
-
-        private void SetFogMaterial()
-        {
-            foreach (var entity in _segmentPivots.Value)
-            {
-                var index = _segmentPivots.Pools.Inc1.Get(entity).SegmentMaterialPivot;
-                var mat = _staticData.Value.chunkMaterials[index].d;
-
-                _sceneContext.Value.FogWall.material.DOColor(mat.color, 1f);
-                DOTween.To(() => RenderSettings.fogColor, color => RenderSettings.fogColor = color, mat.color, 1f);
-            }    
-        }
-
-        private void CreatePopUpText(EcsWorld world, PopUpText upText, string msg, Vector3 position, Transform parent = null)
-        {
-            ref var component = ref world.NewEntityRef<PopUpRequest>();
-            component.SpawnPosition = position;
-            component.SpawnRotation = Quaternion.identity;
-            component.TextUP = msg;
-            component.Parent = parent;
-            component.UpText = upText;
+            var mat = _staticData.Value.chunkMaterials[index].fog;
+            _sceneContext.Value.FogWall.material.DOColor(mat.color, 1f);
+            DOTween.To(() => RenderSettings.fogColor, color => RenderSettings.fogColor = color, mat.color, 1f);
         }
     }
 }

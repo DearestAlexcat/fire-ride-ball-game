@@ -1,43 +1,63 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace Client
 {
-    public struct SpawnSegmentRequest
-    {
-        public int NumberChunks;      
-    }
+    public struct SpawnSegmentRequest { }
+
+    public struct InputHeld { }
+
+    public struct InputReleased { }
     
-    struct PlayerInputComponent
+    public struct InputPressed { }
+
+    public struct CacheKey
     {
-        public bool InputPressed;
-        public bool InputHeld;
-        public bool InputReleased;
+        public int Key; // used for association with pool objects
     }
-   
+
     struct PopUpRequest
     {
-        public string TextUP;
-        public Vector3 SpawnPosition;
-        public Quaternion SpawnRotation;
-        public Transform Parent;
-        public PopUpText UpText;
-    }
-   
-    struct CurvePathComponent
-    {
-        public List<Vector3> CurvePath;
+        public string Value;
+        public MesssageType Type;
     }
 
-    struct SegmentPathComponent
+    struct FXRequest
     {
-        public List<Vector3> SegmentPath;
+        public Vector3 position;
     }
- 
+
+    struct Falling 
+    {
+        public Transform transform;
+        public Vector3 velocity;
+        public float mass;
+    }
+
+    struct Group 
+    {
+        public int Rank;
+    }
+
+    struct InGroup 
+    {
+        public int GroupIndex;
+    }
+
     struct CameraShakeReguest { }
 
-    struct FallingRequest { }
-    
+    struct LaunchingRopeReguest 
+    {
+        public float ProgressReachingRope;
+    }
+
+    struct LoopingMovement
+    {
+        public Transform transform;
+        public Vector3 startPosition;
+        public bool Rotate;
+        public bool Movement;
+    }
+
     public struct ExecutionDelay
     {
         public float time;
@@ -52,18 +72,12 @@ namespace Client
     struct RocketMoveComponent
     {
         public float Time;
-        public int Pivot;
+        public int Pointer;
     }
 
-    struct AccrualScoreComponent
+    struct DelayComponent
     {
-        public float AccrualIntervalScore;
-    }
-
-    struct CurrentPivots
-    {
-        public int SegmentMaterialPivot;
-        public int SegmentCurvePivot;
+        public float Delay;
     }
 
     public struct Component<T>

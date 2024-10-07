@@ -25,13 +25,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1804481632672448194}
+  serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: 0.70710576, w: 0.70710784}
-  m_LocalPosition: {x: -111.6, y: -0.15, z: 0}
-  m_LocalScale: {x: 1, y: 222.22223, z: 1}
+  m_LocalPosition: {x: -111.60012, y: -0.025397811, z: 0}
+  m_LocalScale: {x: 0.94417775, y: 222.22223, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 510080657692410630}
-  m_RootOrder: -1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 90}
 --- !u!33 &2669963039845857584
 MeshFilter:
@@ -49,7 +49,7 @@ MeshRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1804481632672448194}
   m_Enabled: 1
-  m_CastShadows: 1
+  m_CastShadows: 0
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
@@ -61,7 +61,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 98a98f77bd2eaea4fb2d2d563e7e3cb9, type: 2}
+  - {fileID: 2100000, guid: 3cc963c5cad612e4f8b7beebde31fb9e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -95,7 +95,7 @@ GameObject:
   - component: {fileID: 1543756393182893301}
   - component: {fileID: 712901881758855224}
   - component: {fileID: 730280535933994445}
-  m_Layer: 8
+  m_Layer: 11
   m_Name: Top
   m_TagString: ChunkObstacle
   m_Icon: {fileID: 0}
@@ -109,13 +109,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3322448466865158706}
+  serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 25, z: 0}
+  m_LocalPosition: {x: 0, y: 33, z: 0}
   m_LocalScale: {x: 0.9, y: 50, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 34125976400681968}
-  m_RootOrder: -1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &1543756393182893301
 MeshFilter:
@@ -145,7 +145,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 98a98f77bd2eaea4fb2d2d563e7e3cb9, type: 2}
+  - {fileID: 2100000, guid: 0a16aa5b492af0e41bc1480bcc788e57, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -200,7 +200,7 @@ GameObject:
   - component: {fileID: 7024535088794274217}
   - component: {fileID: 5045061008899308346}
   - component: {fileID: 2345665813623210500}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: Bottom
   m_TagString: ChunkObstacle
   m_Icon: {fileID: 0}
@@ -214,14 +214,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7298969509095060709}
+  serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: -25, z: 0}
-  m_LocalScale: {x: 0.9, y: 50, z: 2}
+  m_LocalPosition: {x: 0, y: -78.3008, z: 0}
+  m_LocalScale: {x: 0.9, y: 140.60294, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 9021130889194372871}
   m_Father: {fileID: 34125976400681968}
-  m_RootOrder: -1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &7024535088794274217
 MeshFilter:
@@ -251,7 +251,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 98a98f77bd2eaea4fb2d2d563e7e3cb9, type: 2}
+  - {fileID: 2100000, guid: 0a16aa5b492af0e41bc1480bcc788e57, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -318,6 +318,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8978694369537299997}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
@@ -326,7 +327,6 @@ Transform:
   - {fileID: 3855528090915420773}
   - {fileID: 510080657692410630}
   m_Father: {fileID: 0}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1798308374606828672
 MonoBehaviour:
@@ -343,4 +343,3 @@ MonoBehaviour:
   Top: {fileID: 712901881758855224}
   Bottom: {fileID: 5045061008899308346}
   Floor: {fileID: 8024702208579461391}
-  origPosition: {x: 0, y: 0, z: 0}

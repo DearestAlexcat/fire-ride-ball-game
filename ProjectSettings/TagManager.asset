@@ -4,13 +4,14 @@
 TagManager:
   serializedVersion: 2
   tags:
-  - BonusCircleObj
   - BonusCircleX1
   - BonusCircleX2
   - ChunkObstacle
-  - GotoNextSegment
   - SpawnNextSegment
   - Rocket
+  - FallingRocket
+  - MoveNextSegment
+  - Interacting
   layers:
   - Default
   - TransparentFX
@@ -20,11 +21,11 @@ TagManager:
   - UI
   - No Post
   - Player
-  - ChunkTop
-  - BonusCircleLayer
-  - 
-  - 
-  - 
+  - InteractsPlayer
+  - BonusCircle
+  - FallingRocket
+  - Chunk
+  - InteractBonusCircle
   - 
   - 
   - 

@@ -1,47 +1,46 @@
 using Client;
 using Cysharp.Threading.Tasks;
+using Leopotam.EcsLite;
 using System.Collections.Generic;
 using UnityEngine;
-using static UnityEngine.GraphicsBuffer;
 
 public class Player : MonoBehaviour
 {
     [SerializeField] LineRenderer line;
-    [SerializeField] Rigidbody thisRigidBody;
-    [SerializeField] float ropeAngle;
-    [SerializeField] float rocketSpeed = 2f;
-    [SerializeField] float rocketRotateSpeed = 2f;
-    [Space]
+    [SerializeField] GameObject orb;
     [SerializeField] GameObject rocket;
     [SerializeField] GameObject warpEffect;
-    [Space]
-    [SerializeField] float angularSpeed = 2f;
-    [SerializeField] float angularSpeedForSwinging = 20f;
-    [SerializeField] float angularDragForSwinging = 0.2f;
-
-    [SerializeField] int numberPoints = 20;
-    [SerializeField] float radiusDestination = 0.2f;
-    [SerializeField] int trajectoryPivotIncrement = 1;
+    [SerializeField] PlayerData data;
 
 #if UNITY_EDITOR
-    public bool DebugMode = true;
     List<GameObject> trajectoryObj = new List<GameObject>();
+    List<Vector3> trajectory = new List<Vector3>();
 #endif
 
-    public Rigidbody ThisRigidBody => thisRigidBody;
-    public float RocketSpeed => rocketSpeed;
-    public float RocketRotateSpeed => rocketRotateSpeed;
+    public EcsPackedEntityWithWorld fallingData;
+
+    float angle;
+
+    float angularSpeed; // Angular velocity in rad/s
+    float radius;
 
     int rocketEntity;
     int layerMask;
-    float radius;
-    float angle;
-    float aVelocity;
-    float aAcceleration;
 
-    List<Vector3> trajectory = new List<Vector3>();
-    //int trajectoryPivot;
-    float coef;
+    float fVelocity;
+    float acceleration;
+
+    Vector3 ropeTarget;
+
+    //float progressReachingRope;
+    //CancellationTokenSource cts;
+    //bool isDisposed = false;
+
+    float gravitationalAcceleration = Physics.gravity.magnitude;
+
+    public float LaunchingRopeDuration => data.LaunchingRopeDuration;
+
+    public GameObject Rocket => rocket;
 
     public bool IsRocketActive => rocket.activeSelf;
 
@@ -50,7 +49,7 @@ public class Player : MonoBehaviour
         get => rocketEntity;
         set
         {
-            if(!IsRocketActive)
+            if (!IsRocketActive)
             {
                 rocketEntity = value;
             }
@@ -59,166 +58,206 @@ public class Player : MonoBehaviour
 
     private void Start()
     {
-        layerMask = LayerMask.GetMask("ChunkTop");
+        layerMask = LayerMask.GetMask("Chunk");
     }
 
-    public void CreateTrajectory()
+    public void SetActiveOrb(bool value)
     {
-        AngleInit();
-        CreatePoint();
+        orb.SetActive(value);
+        orb.GetComponent<ParticleSystem>().Play();
     }
 
-    void AngleInit()
+    public void SetActiveWarpEffect(bool value)
     {
-        var diffVector = (line.GetPosition(1) - transform.position).normalized;
-        angle = 180f - Vector3.Angle(diffVector, Vector3.up);
-    }
-
-    void CreatePoint()
-    {
-        float desiredAngle;
-        float shiftedAngle = 360f / numberPoints;
-
-        for (int i = 0; i < numberPoints; i++)
-        {
-            desiredAngle = angle + shiftedAngle * i;
-            Vector3 direction = Quaternion.AngleAxis(-desiredAngle, Vector3.right) * Vector3.up;
-            trajectory.Add(line.GetPosition(1) + direction * radius);
-
-#if UNITY_EDITOR
-            if (DebugMode)
-            {
-                trajectoryObj.Add(Object.Instantiate(Service<StaticData>.Get().Empty, trajectory[trajectory.Count - 1], Quaternion.identity));
-            }
-#endif  
-        }
-    }
-
-    public void ClearTrajectory()
-    {
-        //trajectoryPivot = 0;
-        trajectory = new List<Vector3>();  
-
-#if UNITY_EDITOR
-        if (DebugMode)
-        {
-            for (int i = 0; i < trajectoryObj.Count; i++)
-            {
-                Object.Destroy(trajectoryObj[i]);
-            }
-
-            trajectoryObj = new List<GameObject>();
-        }
-#endif
+        warpEffect.SetActive(value);
     }
 
     public void SetActiveRocket(bool value)
     {
-        thisRigidBody.isKinematic = false;
         rocket.SetActive(value);
-        warpEffect.SetActive(value);
     }
 
-#if UNITY_EDITOR
-    public void DrawDir()
+    //private void EndTaskLaunchingRopeToTarget()
+    //{
+    //    if (!isDisposed && cts != null && !cts.Token.IsCancellationRequested)
+    //    {
+    //        isDisposed = true;
+    //        cts.Cancel();
+    //        cts.Dispose();
+    //    }
+    //}
+
+    //private void RunTaskLaunchingRopeToTarget()
+    //{
+    //    isDisposed = false;
+    //    cts = new CancellationTokenSource();
+    //    var token = cts.Token;
+    //    LaunchingRopeToTarget(token).Forget();
+    //}
+
+    //async UniTask LaunchingRopeToTarget(CancellationToken cancellationToken)
+    //{
+    //    progressReachingRope = 0f;
+
+    //    while(progressReachingRope < 1f)
+    //    {
+    //        if (cancellationToken.IsCancellationRequested)
+    //        {
+    //            return;
+    //        }
+
+    //        line.SetPosition(1, Vector3.Lerp(line.GetPosition(1), ropeTarget, progressReachingRope));
+    //        progressReachingRope += Time.deltaTime / data.LaunchingRopeDuration;
+
+    //        if(progressReachingRope >= 1f)
+    //        {
+    //            radius = (line.GetPosition(1) - transform.position).magnitude;
+    //            angularSpeed = data.LinearSpeed / radius;
+    //            angle = Vector3.Angle(transform.position - line.GetPosition(1), Vector3.up);
+    //        }
+
+    //        await UniTask.NextFrame();
+    //    }
+    //}
+
+    public bool GetRopeTarget()
     {
-        Debug.DrawRay(thisRigidBody.position, Vector3.right, Color.yellow, 100);
-        Debug.DrawRay(thisRigidBody.position, thisRigidBody.transform.up, Color.green, 100);
-        Debug.DrawRay(thisRigidBody.position, thisRigidBody.transform.forward, Color.red, 100);
+        if (Physics.Raycast(transform.position, Vector3.Lerp(Vector3.up, Vector3.forward, data.RopeAngle), out RaycastHit hit, 100f, layerMask))
+        {
+            line.positionCount = 2;
+            ropeTarget = hit.point;
+            line.SetPosition(1, transform.position);
+            return true;
+        }
+
+        return false;
     }
-#endif
 
     public void UpdateSourceRope()
     {
-        if(line.positionCount > 0)
+        if (line.positionCount > 0)
         {
-            line.SetPosition(0, thisRigidBody.position);
-        }
-    }
-
-    public void SetActiveKinematic(bool value)
-    {
-        ClearRope();
-        thisRigidBody.isKinematic = value;
-    }
-
-    public async UniTask SetVelocityZero()
-    {
-        await UniTask.Delay(System.TimeSpan.FromSeconds(0.08f), ignoreTimeScale: false);
-        thisRigidBody.velocity = Vector3.zero;
-    }
-
-
-    public void GetRopeTarget()
-    {
-        if(Physics.Raycast(thisRigidBody.position, Vector3.Lerp(Vector3.up, Vector3.forward, ropeAngle), out RaycastHit hit, 100f, layerMask))
-        {
-            coef = 0f;
-
-            line.positionCount = 2;
-            line.SetPosition(1, hit.point);
-            radius = (line.GetPosition(1) - thisRigidBody.position).magnitude;
-
-            CreateTrajectory();
+            var dir = (line.GetPosition(1) - transform.position).normalized;
+            var size = transform.localScale.x * 0.5f;
+            line.SetPosition(0, transform.position + dir * size);
         }
     }
 
     public void ClearRope()
     {
-        thisRigidBody.isKinematic = false;
-        ClearTrajectory();
         line.positionCount = 0;
     }
 
-    //private bool PointInCircle(Vector3 a, Vector3 b, float r)
+    public Vector3 GetVelocity()
+    {
+        if (fallingData.Unpack(out EcsWorld world, out int entity))
+        {
+            return world.GetEntityRef<Falling>(entity).velocity;
+        }
+        else
+        {
+            Debug.LogError("Falling data unpack ERROR.");
+        }
+
+        return Vector3.zero;
+    }
+
+    public void SetVelocity(Vector3? velocity = null)
+    {
+        if (fallingData.Unpack(out EcsWorld world, out int entity))
+        {
+            ref var item = ref world.GetEntityRef<Falling>(entity);
+            item.velocity = transform.forward * data.LinearSpeed;
+
+#if UNITY_EDITOR
+            Debug.Log($"<color='yellow'>Velocity: {item.velocity}</color>");
+#endif
+
+            if (velocity.HasValue)
+            {
+                item.velocity = velocity.Value;
+            }
+        }
+        else
+        {
+            Debug.LogError("Falling data unpack ERROR.");
+        }
+    }
+
+    //public void ObjectFall()
     //{
-    //    return (b.x - a.x) * (b.x - a.x) + (b.z - a.z) * (b.z - a.z) <= r * r;
+    //    // Apply gravity to the object
+    //    velocity += Vector3.down * gravitationalAcceleration * Time.deltaTime;
+    //    // Update object position based on speed
+    //    transform.position += velocity * Time.deltaTime;
     //}
 
-    //public void CircularMovement()
+    //public void SetVelocity()
     //{
-    //    if (line.positionCount > 0)
-    //    {
-    //        if (PointInCircle(trajectory[trajectoryPivot], thisRigidBody.position, radiusDestination))
-    //        {
-    //            trajectoryPivot = (trajectoryPivot + trajectoryPivotIncrement) % trajectory.Count;
-    //        }
-
-    //        var movement = (trajectory[trajectoryPivot] - thisRigidBody.position).normalized;
-    //        //thisRigidBody.velocity = Vector3.Lerp(thisRigidBody.velocity, movement * angularSpeed, coef);
-
-    //        Seek(movement);
-
-    //        coef = Mathf.Clamp01(coef + Time.deltaTime * 0.5f);
-
-    //        Quaternion newRotation = Quaternion.LookRotation(transform.forward + movement);
-    //        transform.rotation = Quaternion.Lerp(transform.rotation, newRotation, Time.deltaTime * angularSpeed);
-    //    }
+    //    velocity = transform.forward * data.LinearSpeed;
     //}
 
-    //public void CircularMovement12()
+    //public void LineSetPosition(float progressReachingRope)
     //{
-    //    if (line.positionCount > 0)
-    //    {
-    //        angle += Time.deltaTime * angularSpeed;
-    //        Vector3 direction = Quaternion.AngleAxis(-angle, Vector3.right) * Vector3.up;
-    //        thisRigidBody.MovePosition(line.GetPosition(1) + direction * radius);
-    //        Quaternion newRotation = Quaternion.LookRotation(transform.forward + line.GetPosition(1) + direction * radius);
-    //        thisRigidBody.rotation = Quaternion.Lerp(transform.rotation, newRotation, Time.deltaTime * angularSpeed);
-    //    }
+    //    line.SetPosition(0, transform.position);
+    //    line.SetPosition(1, Vector3.Lerp(line.GetPosition(1), ropeTarget, progressReachingRope));
     //}
 
-    //public void CircularMovement1()
-    //{
-    //    if (line.positionCount > 0)
-    //    {
-    //        angle += Time.deltaTime * angularSpeed;                                 
-    //        Vector3 direction = Quaternion.AngleAxis(-angle, Vector3.right) * Vector3.up;
-    //        transform.position = line.GetPosition(1) + direction * radius;
-    //    }
-    //}
+    public void LineSetPosition(float progressReachingRope)
+    {
+        line.SetPosition(0, transform.position);
+        line.SetPosition(1, Vector3.Lerp(line.GetPosition(1), ropeTarget, progressReachingRope));
+    }
+
+    public bool SetAngle()
+    {
+        radius = (ropeTarget - transform.position).magnitude;
+
+        if (Mathf.Approximately(radius, 0f))
+        {
+#if UNITY_EDITOR
+            Debug.Log($"<color='red'>SetAngle: radius equals 0.</color>");
+#endif
+            return false;
+        }
+
+        angularSpeed = data.LinearSpeed / radius;
+        angle = Vector3.Angle(transform.position - ropeTarget, Vector3.up); // 0 - 180 - 0
+        Vector3 cross = Vector3.Cross(transform.position - ropeTarget, Vector3.up);
+        if (Mathf.Sign(cross.x) < 0)
+            angle = 360f - angle; // 0 - 360 - 0
+
+        return true;
+    }
+
+    float EaseInSine(float x)
+    {
+        return 1f - Mathf.Cos(x * Mathf.PI / 2f);
+    }
+
+    Vector3 GetNextPositionOnCircle()
+    {
+        angle += Time.deltaTime * angularSpeed * Mathf.Rad2Deg;
+        Vector3 direction = Quaternion.AngleAxis(-angle, Vector3.right) * Vector3.up;
+        return ropeTarget + direction * radius;
+    }
 
     public void CircularMovement()
+    {
+        if (line.positionCount > 0)
+        {
+            transform.position = GetNextPositionOnCircle();
+            SetVelocity(Vector3.zero);
+            transform.forward = -Vector3.Cross(ropeTarget - transform.position, Vector3.right).normalized;
+
+#if UNITY_EDITOR
+                DrawDir(Vector3.up);
+#endif
+        }
+    }
+
+    // Other version
+    /*public void CircularMovement()
     {
         // var magnitude = ThisRigidBody.velocity.magnitude;
         // var left = Vector2.SignedAngle(rb.velocity, diffVector) > 0;
@@ -226,60 +265,58 @@ public class Player : MonoBehaviour
 
         if (line.positionCount > 0)
         {
-            var diffVector = line.GetPosition(1) - thisRigidBody.position;
+            var diffVector = (line.GetPosition(1) - transform.position).normalized;
             var newDirection = Vector3.Cross(diffVector, Vector3.right).normalized;
-
             thisRigidBody.velocity = Vector3.Lerp(thisRigidBody.velocity, -newDirection * angularSpeed, coef);
             coef = Mathf.Clamp01(coef + Time.deltaTime);
         }
-    }
+    } */
 
+#if UNITY_EDITOR
+    public void DrawDir(Vector3 up)
+    {
+        Debug.DrawRay(transform.position, transform.right, Color.yellow, 100);
+        Debug.DrawRay(transform.position, up, Color.green, 100);
+        Debug.DrawRay(transform.position, transform.forward, Color.red, 100);
+    }
+#endif
 
     // --------------------------------------------------------------------------------------------------
 
-    public void CreateSwingingTrajectory()
-    {
-        AngleInitForSwinging();
-        CreatePointForSwinging();
-    }
-
     void AngleInitForSwinging()
     {
-        angle = (180f - 30f) * Mathf.Deg2Rad;
+        angle = 150f * Mathf.Deg2Rad;
     }
 
+#if UNITY_EDITOR
     void CreatePointForSwinging()
-    {
+    { 
+        if (!data.DebugMode) return;
+
         float desiredAngle;
-        float shiftedAngle = 60f / numberPoints;
-       var angle = (180f - 30f) ;
-        for (int i = 0; i < numberPoints; i++)
+        float shiftedAngle = 60f / data.NumberPoints;
+        var angle = 180f - 30f;
+
+        for (int i = 0; i < data.NumberPoints; i++)
         {
             desiredAngle = angle + shiftedAngle * i;
             Vector3 direction = Quaternion.AngleAxis(-desiredAngle, Vector3.right) * Vector3.up;
             trajectory.Add(line.GetPosition(1) + direction * radius);
-
-#if UNITY_EDITOR
-            if (DebugMode)
-            {
-                trajectoryObj.Add(Object.Instantiate(Service<StaticData>.Get().Empty, trajectory[trajectory.Count - 1], Quaternion.identity));
-            }
-#endif  
+            trajectoryObj.Add(Object.Instantiate(Service<StaticData>.Get().Empty, trajectory[trajectory.Count - 1], Quaternion.identity));
         }
 
         transform.position = trajectory[trajectory.Count - 1];
-        gameObject.GetComponent<ParticleSystem>().Play(false);
     }
-
+#endif
 
     public void SwingingMovement()
     {
         if (line.positionCount > 0)
         {
-            aAcceleration = -0.4f / radius * Mathf.Sin(angle) * Time.deltaTime;  
-            aVelocity += aAcceleration;               
-            aVelocity *= angularDragForSwinging;                   
-            angle -= aVelocity * Time.deltaTime * angularSpeedForSwinging;
+            acceleration = -0.4f / radius * Mathf.Sin(angle) * Time.deltaTime;
+            fVelocity += acceleration;
+            fVelocity *= data.AngularDragForSwinging;
+            angle -= fVelocity * Time.deltaTime * data.AngularSpeedForSwinging;
             Vector3 direction = Quaternion.AngleAxis(angle * Mathf.Rad2Deg, Vector3.right) * Vector3.up;
             transform.position = line.GetPosition(1) + direction * radius;
         }
@@ -287,18 +324,20 @@ public class Player : MonoBehaviour
 
     public async UniTask GetRopeTargetForSwinging()
     {
-        //After restarting the scene, the collision does not work immediately
+        // After restarting the scene, the collision does not work immediately
         await UniTask.Delay(System.TimeSpan.FromSeconds(0.08f), ignoreTimeScale: false);
         
-        if (Physics.Raycast(thisRigidBody.position, Vector3.Lerp(Vector3.up, Vector3.forward, ropeAngle), out RaycastHit hit, 100f, layerMask))
-        //Vector3 point = Vector3.Lerp(Vector3.up, Vector3.forward, ropeAngle).normalized * 15f;
+        if (Physics.Raycast(transform.position, Vector3.Lerp(Vector3.up, Vector3.forward, data.RopeAngle), out RaycastHit hit, 100f, layerMask))
         {
             line.positionCount = 2;
             line.SetPosition(1, hit.point);
-            radius = (line.GetPosition(1) - thisRigidBody.position).magnitude;
+            radius = (line.GetPosition(1) - transform.position).magnitude;
 
-            CreateSwingingTrajectory();
+            AngleInitForSwinging();
+
+#if UNITY_EDITOR
+            CreatePointForSwinging();
+#endif 
         }
     }
-
 }

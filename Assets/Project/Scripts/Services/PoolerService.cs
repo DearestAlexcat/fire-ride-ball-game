@@ -1,41 +1,43 @@
+using System.Collections.Generic;
 using UnityEngine;
 
-public class PoolerService
+public class PoolerService<T> where T : Component
 {
-    public Pooler<Chunk> poolerChunk;
-    public Pooler<BonusCircle> poolerGate;
-    
-    // -------------------------------------------------------------------------------
+    Pooler<T> pooler;
+    Dictionary<int, T> cacheObjects;
 
-    public void InitGatePooler(BonusCircle gate, int poolSize)
+    public PoolerService(T gate, int poolSize)
     {
-        poolerGate = new Pooler<BonusCircle>(gate, poolSize);
+        pooler = new Pooler<T>(gate, poolSize);
+        cacheObjects = new Dictionary<int, T>();
     }
 
-    public BonusCircle GetGate(Vector3 pos, Quaternion qt)
+    public T Get(int cacheKey, bool resetOrientation = true)
     {
-        return poolerGate.Get(pos, qt);
+        var item = pooler.Get(resetOrientation);
+        cacheObjects.Add(cacheKey, item);
+        return item;
     }
 
-    public void FreeGate(BonusCircle gate)
+    public T Get(int cacheKey, Vector3 position, Quaternion rotation)
     {
-        poolerGate.Free(gate);
+        var item = pooler.Get(position, rotation);
+        cacheObjects.Add(cacheKey, item);
+        return item;
     }
 
-    // -------------------------------------------------------------------------------
-
-    public void InitChunkPooler(Chunk chunk, int poolSize, Transform parent)
+    public void Clear()
     {
-        poolerChunk = new Pooler<Chunk>(chunk, poolSize, parent);
+        cacheObjects.Clear();
+        pooler.Clear();
     }
 
-    public Chunk GetChunk()
+    public void Free(int cacheKey)
     {
-        return poolerChunk.Get();
-    }
-
-    public void FreeChunk(Chunk chunk)
-    {
-        poolerChunk.Free(chunk);
+        if(cacheObjects.ContainsKey(cacheKey))
+        {
+            pooler.Free(cacheObjects[cacheKey]);
+            cacheObjects.Remove(cacheKey);
+        }
     }
 }

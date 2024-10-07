@@ -1,4 +1,5 @@
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 
 public class BonusCircle : MonoBehaviour
 {
@@ -6,30 +7,24 @@ public class BonusCircle : MonoBehaviour
     [SerializeField] public float power;
     
     [Space]
-    [SerializeField] Rigidbody[] gate1;
-    [SerializeField] Rigidbody[] gate2;
+    [SerializeField] Rigidbody[] major;
+    [SerializeField] Rigidbody[] minor;
 
     [Space]
-    [SerializeField] Collider gate1Trigger;
-    [SerializeField] Collider gate2Trigger;
+    [SerializeField] Collider majorTrigger;
+    [SerializeField] Collider minorTrigger;
 
-
-    Quaternion[] rotGate1, rotGate2;
+    Quaternion[] qMajor, qMinor;
 
     private void Start()
     {
-        rotGate1 = new Quaternion[gate1.Length];
-        rotGate2 = new Quaternion[gate2.Length];
+        qMajor = new Quaternion[major.Length];
+        qMinor = new Quaternion[minor.Length];
 
-        for (int i = 0; i < gate1.Length; i++)
-        {
-            rotGate1[i] = gate1[i].transform.rotation;
-        }
-
-        for (int i = 0; i < gate2.Length; i++)
-        {
-            rotGate2[i] = gate2[i].transform.rotation;
-        }
+        for (int i = 0; i < major.Length; i++)
+            qMajor[i] = major[i].transform.rotation;
+        for (int i = 0; i < minor.Length; i++)
+            qMinor[i] = minor[i].transform.rotation;
     }
 
     private void OnEnable()
@@ -39,58 +34,60 @@ public class BonusCircle : MonoBehaviour
 
     public void ResetGate()
     {
-        for (int i = 0; i < gate1.Length; i++)
+        int i;
+
+        for (i = 0; i < major.Length; i++)
         {
-            gate1[i].isKinematic = true;
-            gate1[i].transform.localPosition = Vector3.zero;
-            if(rotGate1 != null)
-                gate1[i].transform.rotation = rotGate1[i];
+            major[i].transform.SetParent(transform);
+            major[i].isKinematic = true;
+            major[i].transform.localPosition = Vector3.zero;
+            if (qMajor != null) 
+                major[i].transform.rotation = qMajor[i];
         }
 
-        for (int i = 0; i < gate2.Length; i++)
+        for (i = 0; i < minor.Length; i++)
         {
-            gate2[i].isKinematic = true;
-            gate2[i].transform.localPosition = Vector3.zero;
-            if (rotGate2 != null)
-                gate2[i].transform.rotation = rotGate2[i];
+            minor[i].transform.SetParent(transform);
+            minor[i].isKinematic = true;
+            minor[i].transform.localPosition = Vector3.zero;
+            if (qMinor != null)
+                minor[i].transform.rotation = qMinor[i];
         }
 
-        gate1Trigger.enabled = true;
-        gate2Trigger.enabled = true;
+        majorTrigger.enabled = true;
+        minorTrigger.enabled = true;
     }
 
     public void DestructionGate(string tag)
     {
         if(tag == "BonusCircleX1")
         {
-            gate1Trigger.enabled = false;
-
-            for (int i = 0; i < gate2.Length; i++)
-            {
-                gate2[i].isKinematic = false;
-            }
-
-            Explosion(gate2);
+            majorTrigger.enabled = false;
+            Explosion(minor).Forget();
         }
         else
         {
-            gate2Trigger.enabled = false;
-
-            for (int i = 0; i < gate1.Length; i++)
-            {
-                gate1[i].isKinematic = false;
-            }
-
-            Explosion(gate1);
+            minorTrigger.enabled = false;
+            Explosion(major).Forget();
         }
     }
 
-    void Explosion(Rigidbody[] rig)
+    async UniTask Explosion(Rigidbody[] rbs)
     {
-        foreach (var hit in rig)
+        for (int i = 0; i < rbs.Length; i++)
         {
-            hit.AddForceAtPosition((Vector3.forward + Random.insideUnitSphere) * power, transform.position);
+            rbs[i].transform.SetParent(null);
+            rbs[i].isKinematic = false;
+            rbs[i].AddForce(rbs[i].transform.forward + Random.insideUnitSphere * power, ForceMode.VelocityChange);
         }
+
+        await UniTask.Delay(System.TimeSpan.FromSeconds(5), ignoreTimeScale: false);
+
+        if (this == null)
+            return;
+
+        gameObject.SetActive(false);
+        ResetGate();
     }
 
     public void PlayFX()

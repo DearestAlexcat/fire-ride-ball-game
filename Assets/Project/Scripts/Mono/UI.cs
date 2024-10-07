@@ -4,7 +4,7 @@ namespace Client
 { 
     public class UI : MonoBehaviour
     {
-        // World screen. For blurring.
+        // World screen for blurring and shaking UI elements
         [field: SerializeField] public GameScreenWorld GameScreenWorld { get; set; }
 
         // Screen space Camera

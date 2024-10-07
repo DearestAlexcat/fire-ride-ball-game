@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
@@ -10,130 +10,113 @@ namespace Client
     {
         private readonly EcsCustomInject<RuntimeData> _runtimeData = default;
         private readonly EcsCustomInject<SceneContext> _sceneContext = default;
-        private readonly EcsCustomInject<StaticData> _staticData = default;
-        private readonly EcsCustomInject<UI> _ui = default;
-        
-        private readonly EcsFilterInject<Inc<PlayerInputComponent>> _inputFilter = default;
+
         private readonly EcsFilterInject<Inc<ChangeStateEvent>> _stateFilter = default;
 
-        private void SetActiveBlur(bool value)
-        {
-            var blurSettings = _sceneContext.Value.BlurProfile.components[0] as BlurSettings;
-            blurSettings.strength.value = value ? _staticData.Value.levelBlur : blurSettings.strength.min;
-        }
+        // Entities are finally released after the system has finished its work? Release entities after all work.
 
         public void Run(IEcsSystems systems)
         {
-            foreach (var entity in _stateFilter.Value)
+            // This loop ensures that new requests (ChangeStateEvent) created from the same system are executed in the same frame.
+            // However, one must not forget about the possibility of looping.
+            while (!_stateFilter.Value.IsEmpty()) 
             {
-                var state = _stateFilter.Pools.Inc1.Get(entity).NewGameState;
+                // Prevents possible exception: entity is already in filter.
+                // Release entities after all the work.
+                List<int> entitiesToBeDeleted = new List<int>();  
 
-                _runtimeData.Value.PrevGameState = _runtimeData.Value.GameState;
-                _runtimeData.Value.GameState = state;
-
-                switch (state)
+                foreach (var entity in _stateFilter.Value)
                 {
-                    case GameState.NONE:
-                        //Debug.Log("NONE");
+                    var state = _stateFilter.Pools.Inc1.Get(entity).NewGameState;
 
-                        // Trigger event for swing
-                        foreach (var item in _inputFilter.Value)
-                        {
-                            ref var c = ref _inputFilter.Pools.Inc1.Get(item);
-                            c.InputPressed = true;
-                            c.InputHeld = true;
-                        }
+                    _runtimeData.Value.PrevGameState = _runtimeData.Value.GameState;
+                    _runtimeData.Value.GameState = state;
 
-                        break;
+                    switch (state)
+                    {
+                        case GameState.BEFORE:
 
-                    case GameState.TAPTOSTART:
-                        //Debug.Log("TAPTOSTART");
-                        
-                        Time.timeScale = 1f;
-                        SetActiveBlur(false);
+                            Time.timeScale = 1f;
 
-                        _ui.Value.GameScreenWorld.Show(false);
-                        _ui.Value.PauseScreen.Show(false);
-                        _ui.Value.MainScreen.Show(false);
-                        _ui.Value.GameScreen.Show();
+                            Service<UI>.Get().GameScreen.Score = 1;
+                            Service<UI>.Get().GameScreenWorld.Show(false);
+                            Service<UI>.Get().MainScreen.UpdateBestScore();
+                            Service<UI>.Get().MainScreen.Show();
 
-                        break;
+                            _sceneContext.Value.PlayerView.GetRopeTargetForSwinging().Forget();
 
-                    case GameState.BEFORE:
-                        //Debug.Log("BEFORE");
+                            break;
 
-                        SetActiveBlur(false);
+                        case GameState.MAIN:
 
-                        Time.timeScale = 1f;
+                            _sceneContext.Value.PlayerView.GetComponent<ParticleSystem>().Play();
 
-                        _ui.Value.GameScreen.SetScore(1);
-                        _ui.Value.GameScreenWorld.Show(false);
-                        _ui.Value.MainScreen.SetBestScore(Progress.BestScore);
-                        _ui.Value.MainScreen.Show();
-                        
-                        break;
-                   
-                    case GameState.PLAYING:
-                        //Debug.Log("PLAYING");
+                            break;
 
-                        Time.timeScale = 1f;
-                        SetActiveBlur(false);
+                        case GameState.TAPTOSTART:
 
-                        _sceneContext.Value.PlayerView.ClearRope();
+                            Time.timeScale = 1f;
 
-                        if (_runtimeData.Value.PrevGameState == GameState.TAPTOSTART)
-                        {
-                            _sceneContext.Value.PlayerView.SetVelocityZero().Forget();
-                        }
+                            Service<UI>.Get().GameScreenWorld.Show(false);
+                            Service<UI>.Get().PauseScreen.Show(false);
+                            Service<UI>.Get().MainScreen.Show(false);
+                            Service<UI>.Get().GameScreen.Show();
 
-                        _ui.Value.PauseScreen.Show(false);
-                        _ui.Value.MainScreen.Show(false);
+                            break;
 
-                        _ui.Value.GameScreenWorld.Show(false);
-                        _ui.Value.GameScreen.Show();
-                        
-                        break;
-                   
-                    case GameState.LOSE:
-                        //Debug.Log("LOSE");
+                        case GameState.PLAYING:
 
-                        //SetActiveBlur(true);
+                            Time.timeScale = 1f;
 
-                        if (Progress.BestScore < _ui.Value.GameScreen.Score)
-                        {
-                            Progress.BestScore = _ui.Value.GameScreen.Score;
-                        }
+                            _sceneContext.Value.PlayerView.ClearRope();
 
-                        _ui.Value.RestartScreen.SetCurrentScore(_ui.Value.GameScreen.Score);
-                        _ui.Value.RestartScreen.SetBestScore(Progress.BestScore);
+                            Service<UI>.Get().PauseScreen.Show(false);
+                            Service<UI>.Get().MainScreen.Show(false);
+                            Service<UI>.Get().GameScreenWorld.Show(false);
+                            Service<UI>.Get().GameScreen.Show();
 
-                        _ui.Value.GameScreenWorld.Show();
-                        _ui.Value.GameScreenWorld.SetScore(_ui.Value.GameScreen.Score);
-                        _ui.Value.GameScreen.Show(false);
-                       
-                        _ui.Value.RestartScreen.Show();
-                        
-                        break;
+                            break;
 
-                    case GameState.PAUSE:
-                        //Debug.Log("PAUSE");
-                        SetActiveBlur(true);
+                        case GameState.LOSE:
 
-                        _ui.Value.GameScreenWorld.Show();
-                        _ui.Value.GameScreenWorld.SetScore(_ui.Value.GameScreen.Score);
-                        _ui.Value.GameScreen.Show(false);
+                            if (Progress.BestScore < Service<UI>.Get().GameScreen.Score)
+                            {
+                                Progress.BestScore = Service<UI>.Get().GameScreen.Score;
+                            }
 
-                        _ui.Value.PauseScreen.Show();
+                            Service<UI>.Get().RestartScreen.SetCurrentScore(Service<UI>.Get().GameScreen.Score);
+                            Service<UI>.Get().RestartScreen.SetBestScore(Progress.BestScore);
 
-                        Time.timeScale = 0f;
-                       
-                        break;
-                   
-                    default:
-                        throw new ArgumentOutOfRangeException();
+                            Service<UI>.Get().GameScreenWorld.Show();
+                            Service<UI>.Get().GameScreenWorld.SetScore(Service<UI>.Get().GameScreen.Score);
+                            Service<UI>.Get().GameScreen.Show(false);
+
+                            Service<UI>.Get().RestartScreen.Show();
+
+                            break;
+
+                        case GameState.PAUSE:
+
+                            Service<UI>.Get().GameScreenWorld.Show();
+                            Service<UI>.Get().GameScreenWorld.SetScore(Service<UI>.Get().GameScreen.Score);
+                            Service<UI>.Get().GameScreen.Show(false);
+
+                            Service<UI>.Get().PauseScreen.Show();
+
+                            Time.timeScale = 0f;
+
+                            break;
+                    }
+
+                    entitiesToBeDeleted.Add(entity);
                 }
 
-                systems.GetWorld().DelEntity(entity);
+                // In this particular case, performing an operation via DelHere may result in the release of objects that have not yet been processed.
+                // Because new requests may be added from the same system with the specified delay.
+                foreach (var entity in entitiesToBeDeleted)
+                {
+                    systems.GetWorld().DelEntity(entity);
+                }
             }
         }
     }

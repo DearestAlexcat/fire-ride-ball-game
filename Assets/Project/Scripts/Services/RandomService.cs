@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Unity.Burst.Intrinsics;
 
-namespace Game
+namespace Client
 {
     public sealed class RandomService
     {

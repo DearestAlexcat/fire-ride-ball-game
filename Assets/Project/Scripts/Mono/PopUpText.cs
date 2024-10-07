@@ -31,11 +31,17 @@ public class PopUpText : MonoBehaviour
             .Append(rect.DOScale(maxScale, scaleTime)) 
             .Append(rect.DOScale(normalScale, scaleTime))
             .Append(
-            rect.DOAnchorPos(rect.anchoredPosition + Vector2.up * positionUP, durationUP)
-                .SetEase(easeMove)
-                .SetLink(gameObject)
-                .OnComplete(() => Destroy(gameObject, timeToDestruction))
+                rect.DOAnchorPos(rect.anchoredPosition + Vector2.up * positionUP, durationUP)
+                    .SetEase(easeMove)
+                    .SetLink(gameObject)
+                    .OnComplete(DestoryGO)    
             )
+            .Join(rect.DOScale(minScale, durationUP))
             .Join(textUP.DOFade(0f, durationFade).SetEase(easeFade));
+
+        void DestoryGO()
+        {
+            Destroy(gameObject, timeToDestruction);
+        }
     }
 }

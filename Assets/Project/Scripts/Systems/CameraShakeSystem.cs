@@ -14,7 +14,7 @@ namespace Client
         {
             if (_shakeFilter.Value.IsEmpty()) return;
 
-            foreach (var item in _shakeFilter.Value)
+            foreach (var entity in _shakeFilter.Value)
             {
                 Shake().Forget();
             }
@@ -39,6 +39,5 @@ namespace Client
 
             thisTransform.localPosition = origPosition;
         }
-
     }
 }

@@ -7,36 +7,39 @@ namespace Client
     sealed class ScoreSystem : IEcsRunSystem, IEcsInitSystem
     {
         private readonly EcsCustomInject<RuntimeData> _runtimeData = default;
-        private readonly EcsFilterInject<Inc<AccrualScoreComponent>> _scoreFilter = default;
         private readonly EcsCustomInject<StaticData> _staticData = default;
 
-        private readonly EcsCustomInject<UI> _ui = default;
+        private readonly EcsFilterInject<Inc<DelayComponent>> _delayFilter = default;
 
         private Sequence addScore = null;
+        float delay;
 
         public void Init(IEcsSystems systems)
         {
-            systems.GetWorld().NewEntityRef<AccrualScoreComponent>().AccrualIntervalScore = _staticData.Value.accrualIntervalScore;
+            delay = _staticData.Value.standartDelay;
         }
 
         public void Run(IEcsSystems systems) 
         {
-            if (_runtimeData.Value.GameState == GameState.PLAYING)
+            if (_runtimeData.Value.GameState != GameState.PLAYING) return;
+
+            // event to change delay
+            foreach (var item in _delayFilter.Value)
             {
-                foreach (var item in _scoreFilter.Value)
-                {
-                    if (addScore == null)
+                delay = _delayFilter.Pools.Inc1.Get(item).Delay;
+                systems.GetWorld().DelEntity(item);
+            }
+
+            if (addScore == null) // delayed code execution
+            {
+                addScore = DOTween.Sequence();
+                addScore
+                    .AppendInterval(delay) // delay the whole Sequence by n second
+                    .OnComplete(() =>
                     {
-                        addScore = DOTween.Sequence();
-                        addScore
-                            .AppendInterval(_scoreFilter.Pools.Inc1.Get(item).AccrualIntervalScore)
-                            .OnComplete(() =>
-                            {
-                                _ui.Value.GameScreen.IncrementScore(1);
-                                addScore = null;
-                            });
-                    }
-                }
+                        Service<UI>.Get().GameScreen.IncrementScore(1);
+                        addScore = null;
+                    });
             }
         }
     }

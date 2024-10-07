@@ -13,22 +13,22 @@ MonoBehaviour:
   m_Name: StaticData
   m_EditorClassIdentifier: 
   UI: {fileID: 341461422055330536, guid: d71ce20573f5fe444a62ee3cd115768e, type: 3}
-  PlusOne: {fileID: 2569000461828804949, guid: 2d6df13dd00551c4888ccb6d15bafca3, type: 3}
-  PlusTime: {fileID: 2569000461828804949, guid: 43efba576a3dea3478c0c87691d44bf0,
+  PopupText: {fileID: 2569000461828804949, guid: 56ea616950a43ea429c5d1f982267fc0,
     type: 3}
   BonusCircle: {fileID: 6742028302105620483, guid: a8114a54daac1d840a90acce2cf3b1a8,
     type: 3}
   Chunk: {fileID: 1798308374606828672, guid: c7915cd01800eb6478c972bbb1b88453, type: 3}
-  Rocket: {fileID: 1891457921723565504, guid: c5f4cc03f56819f4086a28a26d6052ab, type: 3}
-  Empty: {fileID: 7010451636422915639, guid: fb444b9c7b9b7ac48aaa1638cc548cf2, type: 3}
+  Rocket: {fileID: 1858095172032015758, guid: c5f4cc03f56819f4086a28a26d6052ab, type: 3}
+  RocketFalling: {fileID: 2776704396029105960, guid: 875f018e62880aa438638c60616877ee,
+    type: 3}
   levelBlur: 12
   hFOV: 30
   orthoSize: 10
   DefaultResolution: {x: 1920, y: 1080}
   WidthOrHeight: 0
-  cameraStartOffset: {x: 30, y: 7, z: 0}
-  cameraOffset: {x: 15, y: 7, z: 0}
-  cameraRotation: {x: 10, y: -70, z: 0}
+  cameraStartOffset: {x: 30, y: 4, z: 0}
+  cameraOffset: {x: 12, y: 8.5, z: 0}
+  cameraRotation: {x: 13.2, y: -70, z: 0}
   cameraSmoothness: 0.01
   cameraSmoothnessSpeed: 25
   shakeTime: 0.2
@@ -37,6 +37,7 @@ MonoBehaviour:
   fogWallStartOffset: {x: 40, y: 0, z: 0}
   fogWallOffset: {x: 50, y: 0, z: 0}
   fogWallRotation: {x: 0, y: 0, z: -90}
+  minNumSegments: 3
   numberChunksInSegment: 150
   segmentPatterns:
   - serializedVersion: 2
@@ -398,40 +399,47 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  curveScalerByY: 20
-  distanceBetweenChunks: 8
+  curveScalerByY: 28
   chunkMaterials:
-  - a: {fileID: 2100000, guid: dc1ae8731b0cb324784ac0790570757a, type: 2}
-    b: {fileID: 2100000, guid: 6bb88eb688a2cbe4b9cb721ba0eb1d28, type: 2}
-    c: {fileID: 2100000, guid: fa9b0675252ea0e479949404d705ae3a, type: 2}
-    d: {fileID: 2100000, guid: ea542071a993b8d4c846bbf018377aad, type: 2}
-  - a: {fileID: 2100000, guid: 368555a6da1083848a9fb3eddb7f1aa6, type: 2}
-    b: {fileID: 2100000, guid: 9055c37a70270034c902be50814f3e2f, type: 2}
-    c: {fileID: 2100000, guid: 32d6bae6548422444a1673d7f111f425, type: 2}
-    d: {fileID: 2100000, guid: 85be668f47c2fa4409d00b4743ea43de, type: 2}
-  - a: {fileID: 2100000, guid: 0a16aa5b492af0e41bc1480bcc788e57, type: 2}
-    b: {fileID: 2100000, guid: 58b03d1c3a39482428b7cea678f9b1e0, type: 2}
-    c: {fileID: 2100000, guid: 3cc963c5cad612e4f8b7beebde31fb9e, type: 2}
-    d: {fileID: 2100000, guid: 36d85339982628344904ae20e58b86b5, type: 2}
-  - a: {fileID: 2100000, guid: b0246c934cf08f642be072f26ebb7dc5, type: 2}
-    b: {fileID: 2100000, guid: d62999a06020d6843a6adc729f130836, type: 2}
-    c: {fileID: 2100000, guid: 6d7fe3ae116034d4e88a13f58d5f5e26, type: 2}
-    d: {fileID: 2100000, guid: 995a7abc4febea643a6397ea703859b8, type: 2}
-  - a: {fileID: 2100000, guid: 19620a2708d3ba549b66c58f6a49b49a, type: 2}
-    b: {fileID: 2100000, guid: 10e60fff03cc3bf48abc96da975f4cab, type: 2}
-    c: {fileID: 2100000, guid: ed220be0893f8fe478fae7c5a0c27e22, type: 2}
-    d: {fileID: 2100000, guid: 3b2b6ee2e9bb51b4f9852bcab9f705bb, type: 2}
-  noiseForCurvePoints: {x: 1, y: 5}
-  bonusCircleSpawnPosition: 22
+  - columnA: {fileID: 2100000, guid: dc1ae8731b0cb324784ac0790570757a, type: 2}
+    columnB: {fileID: 2100000, guid: 6bb88eb688a2cbe4b9cb721ba0eb1d28, type: 2}
+    floor: {fileID: 2100000, guid: fa9b0675252ea0e479949404d705ae3a, type: 2}
+    fog: {fileID: 2100000, guid: ea542071a993b8d4c846bbf018377aad, type: 2}
+  - columnA: {fileID: 2100000, guid: 0a16aa5b492af0e41bc1480bcc788e57, type: 2}
+    columnB: {fileID: 2100000, guid: 58b03d1c3a39482428b7cea678f9b1e0, type: 2}
+    floor: {fileID: 2100000, guid: 3cc963c5cad612e4f8b7beebde31fb9e, type: 2}
+    fog: {fileID: 2100000, guid: 36d85339982628344904ae20e58b86b5, type: 2}
+  - columnA: {fileID: 2100000, guid: 368555a6da1083848a9fb3eddb7f1aa6, type: 2}
+    columnB: {fileID: 2100000, guid: 9055c37a70270034c902be50814f3e2f, type: 2}
+    floor: {fileID: 2100000, guid: 32d6bae6548422444a1673d7f111f425, type: 2}
+    fog: {fileID: 2100000, guid: 85be668f47c2fa4409d00b4743ea43de, type: 2}
+  - columnA: {fileID: 2100000, guid: b0246c934cf08f642be072f26ebb7dc5, type: 2}
+    columnB: {fileID: 2100000, guid: d62999a06020d6843a6adc729f130836, type: 2}
+    floor: {fileID: 2100000, guid: 6d7fe3ae116034d4e88a13f58d5f5e26, type: 2}
+    fog: {fileID: 2100000, guid: 995a7abc4febea643a6397ea703859b8, type: 2}
+  - columnA: {fileID: 2100000, guid: 19620a2708d3ba549b66c58f6a49b49a, type: 2}
+    columnB: {fileID: 2100000, guid: 10e60fff03cc3bf48abc96da975f4cab, type: 2}
+    floor: {fileID: 2100000, guid: ed220be0893f8fe478fae7c5a0c27e22, type: 2}
+    fog: {fileID: 2100000, guid: 3b2b6ee2e9bb51b4f9852bcab9f705bb, type: 2}
+  noiseForCurvePoints: {x: 5, y: 11}
   bonusCircleCount: 5
-  spawnProbabilityRocket: 1
-  yoyoSpeedRocket: 1
-  yoyoRotSpeedRocket: 75
-  yoyoShiftByYRocket: 2.1
-  spawnIntervalRocket: {x: 1.9, y: 2.1}
+  spawnNextSegmentPosition: 0.5
+  rocketSpawnProbability: 0.72
+  rocketSpawnPoint1: 0.42
+  rocketSpawnPoint2: 0.57
   flightTimeRangeRocket: {x: 4, y: 6}
   skipWaypointsInFlightRocket: 10
   pointRadiusDestination: 1
-  accrualIntervalScore: 0.8
+  rocketSpeed: 35
+  rocketRotateSpeed: 2
+  loopingRotateSpeed: 75
+  loopingShiftByY: 5
+  standartDelay: 0.5
   OnePlusShift: {x: 0, y: 500}
+  launchingRopeDuration: 0.12
+  explosionEffect: {fileID: 1719419451638453356, guid: 94b72bc76dd20b6458ea8cf180eaad60,
+    type: 3}
+  playerMass: 2
+  slowmo: 0.1
+  Empty: {fileID: 7010451636422915639, guid: fb444b9c7b9b7ac48aaa1638cc548cf2, type: 3}
   ThisLevels: {fileID: 11400000, guid: 439e42971724e3948b3b54438c30a9dc, type: 2}

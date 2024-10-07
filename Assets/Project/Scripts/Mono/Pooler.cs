@@ -23,18 +23,23 @@ public class Pooler<T> where T : Component
 		}
 	}
 
-	public T Get()
+    private T Get()
+    {
+        T ret = m_FreeInstances.Count > 0 ? m_FreeInstances.Dequeue() : Object.Instantiate(m_Original, m_parent);
+        ret.gameObject.SetActive(true);
+        return ret;
+    }
+
+    public T Get(bool resetOrientation = true)
 	{
-		return Get(Vector3.zero, Quaternion.identity);
+        return resetOrientation ? Get(Vector3.zero, Quaternion.identity) : Get();
 	}
 
-	public T Get(Vector3 pos, Quaternion quat)
+    public T Get(Vector3 position, Quaternion rotation)
 	{
-	    T ret = m_FreeInstances.Count > 0 ? m_FreeInstances.Dequeue() : Object.Instantiate(m_Original, m_parent);
-  
-        ret.gameObject.SetActive(true);
-		ret.gameObject.transform.position = pos;
-		ret.gameObject.transform.rotation = quat;
+		T ret = Get();
+		ret.gameObject.transform.position = position;
+		ret.gameObject.transform.rotation = rotation;
 
 		return ret;
 	}

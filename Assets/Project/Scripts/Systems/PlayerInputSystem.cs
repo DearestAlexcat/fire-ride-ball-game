@@ -5,39 +5,45 @@ using UnityEngine.EventSystems;
 
 namespace Client 
 {
-    sealed class PlayerInputSystem : IEcsInitSystem, IEcsRunSystem
+    sealed class PlayerInputSystem : IEcsRunSystem
     {
-        private readonly EcsFilterInject<Inc<PlayerInputComponent>> _inputFilter = default;
         private readonly EcsCustomInject<RuntimeData> _runtimeData = default;
 
-        public void Init(IEcsSystems systems)
-        {
-            systems.GetWorld().NewEntity<PlayerInputComponent>();
-        }
+#if UNITY_EDITOR
+        private readonly EcsCustomInject<StaticData> _staticData = default;
+#endif
+
+        private readonly EcsFilterInject<Inc<RocketMoveComponent>> _rocketMoveFiler = default;
 
         public void Run(IEcsSystems systems) 
         {
             if (_runtimeData.Value.GameState != GameState.PLAYING) return;
-            DoInput();
-        }
+            
+            if (!_rocketMoveFiler.Value.IsEmpty()) return;
 
-        public void DoInput()
-        {
-            foreach (var entity in _inputFilter.Value)
+            // Exit if interact with ui, for example, the pause button
+            if (EventSystem.current.IsPointerOverGameObject() || EventSystem.current.IsPointerOverGameObject(0)) return;
+
+#if UNITY_EDITOR
+            if (Input.GetKeyDown(KeyCode.F))
             {
-                if(Input.GetKeyDown(KeyCode.F))
-                {
-                    Time.timeScale = 0.3f;
-                }
+                Time.timeScale = Time.timeScale < 1f ? 1f : _staticData.Value.slowmo;
+            }
+#endif
 
-                if (EventSystem.current.IsPointerOverGameObject() || EventSystem.current.IsPointerOverGameObject(0))
-                {
-                    return;
-                }
+            if (Input.GetMouseButtonDown(0))
+            {
+                systems.GetWorld().NewEntity<InputPressed>();
+            }
 
-                _inputFilter.Pools.Inc1.Get(entity).InputPressed = Input.GetMouseButtonDown(0);
-                _inputFilter.Pools.Inc1.Get(entity).InputReleased = Input.GetMouseButtonUp(0);
-                _inputFilter.Pools.Inc1.Get(entity).InputHeld = Input.GetMouseButton(0);
+            if (Input.GetMouseButtonUp(0))
+            {
+                systems.GetWorld().NewEntity<InputReleased>();
+            }
+            
+            if (Input.GetMouseButton(0))
+            {
+                systems.GetWorld().NewEntity<InputHeld>();
             }
         }
     }

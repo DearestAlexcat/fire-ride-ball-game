@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-namespace KVSL
+namespace Client
 {
     public class AnimationEvents : MonoBehaviour
     {
@@ -33,10 +33,5 @@ namespace KVSL
         {
             gameObject.SetActive(false);
         }
-
-        //public void PlaySound(int key)
-        //{
-        //    AudioController.Instance.PlaySound((AudioKey)key);
-        //}
     }
 }

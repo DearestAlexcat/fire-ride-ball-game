@@ -6,10 +6,10 @@ namespace Client
     {
         public static void FullInit()
         {
-            InitializeUi();
+            InitializeUI();
         }
 
-        public static UI InitializeUi()
+        public static void InitializeUI()
         {
             var configuration = Service<StaticData>.Get();
 
@@ -20,8 +20,6 @@ namespace Client
                 ui = Object.Instantiate(configuration.UI);
                 Service<UI>.Set(ui);
             }
-
-            return ui;
         }
     }
 }

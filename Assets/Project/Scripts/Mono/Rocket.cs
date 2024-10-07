@@ -1,26 +1,38 @@
-using Client;
 using UnityEngine;
+using DG.Tweening;
 
-public class Rocket : MonoBehaviour
+namespace Client
 {
-    public int Pivot { get; set; }
-    public int SegmentEntity { get; set; }
-    public int Entity { get; set; }
-
-    float shift;
-    Vector3 startPosition, temp;
-
-    private void Start()
+    public class Rocket : MonoBehaviour
     {
-        startPosition = transform.position;
-    }
+        [SerializeField] ParticleSystem ring;
+        [SerializeField] ParticleSystem glow;
+        [SerializeField] ParticleSystem sparks;
 
-    public void DoYoyo(StaticData staticData)
-    {
-        shift += staticData.yoyoShiftByYRocket * Mathf.Sin(Time.time) * staticData.yoyoSpeedRocket * Time.deltaTime;
-        temp = transform.position;
-        temp.y = (startPosition.y - staticData.yoyoShiftByYRocket) + shift;
-        transform.position = temp;
-        transform.Rotate(0, staticData.yoyoRotSpeedRocket * Time.deltaTime, 0, Space.Self);
+        public int Pointer { get; set; }
+
+        public void PlayRingFx()
+        {
+            ring.Play();
+        }
+
+        public void PlayPickupFx()
+        {
+            glow.Play();
+            sparks.Play();
+        }
+
+        public void Disappearance()
+        {
+            GetComponent<Collider>().enabled = false;
+
+            var scale = transform.localScale;
+
+            transform.DOScale(0f, 0.2f).OnComplete(() => {
+                gameObject.SetActive(false);
+                transform.localScale = scale;
+                GetComponent<Collider>().enabled = true;
+            });
+        }
     }
 }

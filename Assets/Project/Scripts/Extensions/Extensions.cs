@@ -1,7 +1,7 @@
 using Client;
 using Leopotam.EcsLite;
 
-public static class FilterEx
+public static class FilterExtensions
 {
     public static bool IsEmpty(this EcsFilter filter)
     {
@@ -9,8 +9,22 @@ public static class FilterEx
     }
 }
 
-public static class EcsWorldEx
+public static class EcsWorldExtensions
 {
+    public static void SetIncreaseScoreX(this EcsWorld world, int factor = 1)
+    {
+        world.NewEntityRef<DelayComponent>().Delay = Service<StaticData>.Get().standartDelay * (1f / factor);
+        Service<UI>.Get().GameScreen.SetFactor(factor);
+        Service<UI>.Get().GameScreenWorld.SetFactor(factor);
+    }
+
+    public static void CreatePopUpText(this EcsWorld world, string message, MesssageType type)
+    {
+        ref var popup = ref world.NewEntityRef<PopUpRequest>();
+        popup.Value = message;
+        popup.Type = type;
+    }
+
     public static ref T GetEntityRef<T>(this EcsWorld world, int entity) where T : struct
     {
         return ref world.GetPool<T>().Get(entity);

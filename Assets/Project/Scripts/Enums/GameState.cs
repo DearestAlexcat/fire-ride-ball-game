@@ -2,10 +2,12 @@
 public enum GameState
 {
     NONE,
-    TAPTOSTART,
     BEFORE,
+    MAIN,
+    TAPTOSTART,
     PLAYING,
     WIN,
     LOSE,
-    PAUSE,
+    ZOOMBACK,
+    PAUSE
 }

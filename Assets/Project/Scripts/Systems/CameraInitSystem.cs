@@ -20,12 +20,12 @@ namespace Client
             SetFOV();
         }
 
-        private void Monitoring()
-        {
-            Init();
-            SetFOV();
-            Debug.Log(Camera.main.fieldOfView);
-        }
+        //private void Monitoring()
+        //{
+        //    Init();
+        //    SetFOV();
+        //    Debug.Log(Camera.main.fieldOfView);
+        //}
 
         //public void Run(EcsSystems systems)
         //{
@@ -62,6 +62,5 @@ namespace Client
                 _sceneContext.Value.NoPostCamera.fieldOfView = Camera.main.fieldOfView;
             }
         }
-
     }
 }

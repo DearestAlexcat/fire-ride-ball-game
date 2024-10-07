@@ -14,7 +14,7 @@ namespace Client
 
             yield return null;
 
-            Levels.LoadCurrentWithSkip();
+            Levels.LoadCurrent();
         }
     }
 }

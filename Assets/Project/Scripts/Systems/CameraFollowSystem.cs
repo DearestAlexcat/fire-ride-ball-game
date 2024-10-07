@@ -35,19 +35,22 @@ namespace Client
             targetPoint = _sceneContext.Value.PlayerView.transform.position + _staticData.Value.cameraOffset;
             targetWallOffset = _staticData.Value.fogWallOffset;
 
-            if (_runtimeData.Value.GameState == GameState.BEFORE || _runtimeData.Value.GameState == GameState.NONE)
+            if (_runtimeData.Value.GameState == GameState.BEFORE ||
+                _runtimeData.Value.GameState == GameState.MAIN || 
+                _runtimeData.Value.GameState == GameState.ZOOMBACK)
             {
                 targetPoint = _sceneContext.Value.PlayerView.transform.position + _staticData.Value.cameraStartOffset;
                 targetWallOffset = _staticData.Value.fogWallStartOffset;
             }
 
-            if (_runtimeData.Value.GameState == GameState.TAPTOSTART)
+            // The condition block moves the camera towards/away from the player
+            if (_runtimeData.Value.GameState == GameState.TAPTOSTART || _runtimeData.Value.GameState == GameState.ZOOMBACK)
             {
                 Camera.main.transform.position = Vector3.MoveTowards(currentPosition, targetPoint, _staticData.Value.cameraSmoothnessSpeed * Time.deltaTime);
                 
                 _sceneContext.Value.FogWall.transform.position = Vector3.MoveTowards(currentPosition - targetWallOffset, targetPoint, _staticData.Value.cameraSmoothnessSpeed * Time.deltaTime);
             }
-            else
+            else // Player pursuit
             {
                 Camera.main.transform.position = Vector3.SmoothDamp(currentPosition, targetPoint, ref cameraCurrentVelocity, _staticData.Value.cameraSmoothness);
                 

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public static class EnumerableEx
+public static class EnumerableExtension
 {
     public static IEnumerable<T> Shuffle<T>(this IEnumerable<T> Source)
     {
@@ -37,7 +37,6 @@ public static class ShuffleServices
         IEnumerator<int> randoms = Enumerable.Range(0, Arr.Length).Shuffle().GetEnumerator();
         randoms.MoveNext();
 
-
         // Loop through the entire massive structure
         // Each iteration we move both the randoms enumerator and the values in indices
         for (int i = 0; i < Arr.Length; ++i, randoms.MoveNext(), MoveNext(Arr.Rank - 1))
@@ -47,7 +46,7 @@ public static class ShuffleServices
         // the indices of all array elements:
         // 0, 0, 0, ..., 0
         // 0, 0, 0, ..., 1
-        // 0, 0, 0, ..., 2s
+        // 0, 0, 0, ..., 2
         // ...
         // 3, 2, 4, ..., 0
         // ...

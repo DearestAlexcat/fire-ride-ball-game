@@ -4,13 +4,11 @@ using Leopotam.EcsLite.ExtendedSystems;
 using System.Collections;
 using UnityEngine;
 using LeoEcsPhysics;
-using Game;
-
 
 namespace Client 
 {
-    sealed class EcsStartup : MonoBehaviour {
-        
+    sealed class EcsStartup : MonoBehaviour 
+    {
         private EcsWorld _world;
 
         IEcsSystems _update;
@@ -18,10 +16,9 @@ namespace Client
 
         public RuntimeData runtimeData;
         public StaticData staticData;
-        public SceneContext sceneContext;
 
         [SerializeField] private bool _useSeed = default;
-        [SerializeField] private int _randomSeed = default;
+        //[SerializeField] private int _randomSeed = default;
 
         public IEnumerator Start() 
         {
@@ -35,61 +32,75 @@ namespace Client
             runtimeData = new RuntimeData();
 
             Service<EcsWorld>.Set(_world);
-            Service<SceneContext>.Set(sceneContext);
             Service<RuntimeData>.Set(runtimeData);
-            Service<StaticData>.Set(staticData);
 
-            GameInitialization.FullInit();
+            RocketPathService pathService = new();
 
             _update
                 .Add(new InitializeSystem())
                 .Add(new ChangeStateSystem())
 
-                .Add(new CameraInitSystem())
-                .Add(new CameraPointerSystem())
+                .Add(new CameraInitSystem())    
 
-                .Add(new PlayerInputSystem())
                 .Add(new TapToStartSystem())
+                
+                .Add(new PlayerInputSystem())   
 
-                .Add(new RopeRenderSystem())
+                .Add(new ScoreSystem())         
 
-                .Add(new ScoreSystem())
+                .Add(new CameraShakeSystem())   
 
-                .Add(new CameraShakeSystem())
-                .DelHere<CameraShakeReguest>()
-
-                .Add(new SpawnSegmentSystem())
-                .DelHere<SpawnSegmentRequest>()
+                .Add(new FreeSegmentViewSystem())       
+                .Add(new CreateSegmentViewSystem())    
+                
+                .Add(new LoopingMovementSystem())
 
                 .Add(new PopUpSystem())
+
+                .Add(new RocketFlightSystem())
+                .Add(new ExitingCircularMovement())   
+                
+                .Add(new PlayerMovementSystem())
+                .Add(new FallingObjectSystem())
+
+                .Add(new RopeHandlingSystem())
+                .Add(new LaunchingRopeSystem())
+
+                .Add(new FxSystem())
+#if UNITY_EDITOR
+                .Add(new AutoFlightPlayerSystem())      
+#endif
+
+                .Add(new CameraFollowSystem())          
+
+                .DelHere<FXRequest>()
+                .DelHere<CameraShakeReguest>()
+                .DelHere<SpawnSegmentRequest>()
+                .DelHere<InputReleased>()
+                .DelHere<InputHeld>()
+                .DelHere<InputPressed>()
 #if UNITY_EDITOR
                 .Add (new Leopotam.EcsLite.UnityEditor.EcsWorldDebugSystem())
 #endif
-                .Inject(staticData, runtimeData, sceneContext, Service<UI>.Get())
-                .Inject(new RandomService(_useSeed ? _randomSeed : null))
-                .Inject(new PoolerService())
+                .Inject(staticData, runtimeData, GetComponent<SceneContext>())
+                .Inject(new RandomService(_useSeed ? (int)(Time.realtimeSinceStartup * 100) : null))
+                
+                .Inject(new PoolerService<Chunk>(staticData.Chunk, staticData.numberChunksInSegment * 2), 
+                        new PoolerService<BonusCircle>(staticData.BonusCircle, staticData.bonusCircleCount),
+                        new PoolerService<Rocket>(staticData.Rocket, staticData.minNumSegments - 1))
+                
+                .Inject(pathService)
                 .Init();
 
             _fixedUpdate
-                .Add(new PlayerMovementSystem())               
-                .Add(new CameraFollowSystem())              
-                .Add(new OnTriggerSystem())
-                .Add(new RocketSystem())
+                .Add(new OnTriggerSystem())             
+                .Inject(staticData, GetComponent<SceneContext>(), runtimeData)
 
-                .Inject(staticData, sceneContext, runtimeData, Service<UI>.Get())
                 .DelHerePhysics()
                 .Init();
 
             yield return null;
         }
-
-#if UNITY_EDITOR
-        public void DisableBlur()
-        {
-            var blurSettings = Service<SceneContext>.Get().BlurProfile.components[0] as BlurSettings;
-            blurSettings.strength.value = 0f;
-        }
-#endif
 
         public void Update() 
         {
@@ -103,10 +114,6 @@ namespace Client
 
         public void OnDestroy() 
         {
-
-#if UNITY_EDITOR
-            DisableBlur();
-#endif
             if (_world != null)
             {
                 EcsPhysicsEvents.ecsWorld = null;
